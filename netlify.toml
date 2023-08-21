@@ -1,0 +1,13 @@
+[build]
+    command = "gatsby build"
+    publish = "public"
+
+[dev]
+    command = "gatsby develop"
+
+[[redirects]]
+    from = ""
+    to = ""
+
+[[plugins]]
+    package = "@netlify/plugin-gatsby"
