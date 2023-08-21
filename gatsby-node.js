@@ -19,12 +19,10 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
   // Get all markdown blog posts sorted by date
   const result = await graphql(`
     {
-      allMarkdownRemark(sort: { frontmatter: { date: ASC } }, limit: 1000) {
+      allContentfulBlog(sort: {date: DESC}) {
         nodes {
+          slug
           id
-          fields {
-            slug
-          }
         }
       }
     }
@@ -38,19 +36,21 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
     return
   }
 
-  const posts = result.data.allMarkdownRemark.nodes
+  const posts = result.data.allContentfulBlog.nodes
+  console.log(posts);
 
-  // Create blog posts pages
+  // Create blog postNodes pages
   // But only if there's at least one markdown file found at "content/blog" (defined in gatsby-config.js)
   // `context` is available in the template as a prop and as a variable in GraphQL
 
   if (posts.length > 0) {
     posts.forEach((post, index) => {
+      console.log(JSON.stringify(post));
       const previousPostId = index === 0 ? null : posts[index - 1].id
       const nextPostId = index === posts.length - 1 ? null : posts[index + 1].id
 
       createPage({
-        path: post.fields.slug,
+        path: post.slug,
         component: blogPost,
         context: {
           id: post.id,
@@ -62,22 +62,22 @@ exports.createPages = async ({ graphql, actions, reporter }) => {
   }
 }
 
-/**
- * @type {import('gatsby').GatsbyNode['onCreateNode']}
- */
-exports.onCreateNode = ({ node, actions, getNode }) => {
-  const { createNodeField } = actions
+// /**
+//  * @type {import('gatsby').GatsbyNode['onCreateNode']}
+//  */
+// exports.onCreateNode = ({ node, actions, getNode }) => {
+//   const { createNodeField } = actions
 
-  if (node.internal.type === `MarkdownRemark`) {
-    const value = createFilePath({ node, getNode })
+//   if (node.internal.type === `MarkdownRemark`) {
+//     const value = createFilePath({ node, getNode })
 
-    createNodeField({
-      name: `slug`,
-      node,
-      value,
-    })
-  }
-}
+//     createNodeField({
+//       name: `slug`,
+//       node,
+//       value,
+//     })
+//   }
+// }
 
 /**
  * @type {import('gatsby').GatsbyNode['createSchemaCustomization']}

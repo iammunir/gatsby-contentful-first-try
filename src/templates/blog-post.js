@@ -1,15 +1,36 @@
 import * as React from "react"
 import { Link, graphql } from "gatsby"
+import { renderRichText } from 'gatsby-source-contentful/rich-text'
+import { documentToPlainTextString } from '@contentful/rich-text-plain-text-renderer'
+import { INLINES, BLOCKS, MARKS } from '@contentful/rich-text-types'
+import { GatsbyImage, getImage } from 'gatsby-plugin-image'
 
 import Bio from "../components/bio"
 import Layout from "../components/layout"
 import Seo from "../components/seo"
 
 const BlogPostTemplate = ({
-  data: { previous, next, site, markdownRemark: post },
+  data: { previous, next, site, contentfulBlog: post },
   location,
 }) => {
   const siteTitle = site.siteMetadata?.title || `Title`
+
+  const plainTextContent = documentToPlainTextString(JSON.parse(post.content.raw));
+
+  const options = {
+    renderNode: {
+      [BLOCKS.EMBEDDED_ASSET]: (node) => {
+        const { gatsbyImageData, description } = node.data.target
+        console.dir(node.data.target)
+        return (
+          <GatsbyImage
+              image={getImage(node.data.target)}
+              alt={description}
+          />
+        )
+      },
+    },
+  };
 
   return (
     <Layout location={location} title={siteTitle}>
@@ -19,13 +40,14 @@ const BlogPostTemplate = ({
         itemType="http://schema.org/Article"
       >
         <header>
-          <h1 itemProp="headline">{post.frontmatter.title}</h1>
-          <p>{post.frontmatter.date}</p>
+          <h1 itemProp="headline">{post.title}</h1>
+          <p>{post.date}</p>
         </header>
         <section
-          dangerouslySetInnerHTML={{ __html: post.html }}
           itemProp="articleBody"
-        />
+        >
+          {post.content?.raw && renderRichText(post.content, options)}
+        </section>
         <hr />
         <footer>
           <Bio />
@@ -43,15 +65,15 @@ const BlogPostTemplate = ({
         >
           <li>
             {previous && (
-              <Link to={previous.fields.slug} rel="prev">
-                ← {previous.frontmatter.title}
+              <Link to={previous.slug} rel="prev">
+                ← {previous.title}
               </Link>
             )}
           </li>
           <li>
             {next && (
-              <Link to={next.fields.slug} rel="next">
-                {next.frontmatter.title} →
+              <Link to={next.slug} rel="next">
+                {next.title} →
               </Link>
             )}
           </li>
@@ -61,11 +83,11 @@ const BlogPostTemplate = ({
   )
 }
 
-export const Head = ({ data: { markdownRemark: post } }) => {
+export const Head = ({ data: { contentfulBlog: post } }) => {
   return (
     <Seo
-      title={post.frontmatter.title}
-      description={post.frontmatter.description || post.excerpt}
+      title={post.title}
+      description={post.description.description || post.excerpt}
     />
   )
 }
@@ -83,31 +105,36 @@ export const pageQuery = graphql`
         title
       }
     }
-    markdownRemark(id: { eq: $id }) {
+    contentfulBlog(id: {eq: $id}) {
       id
-      excerpt(pruneLength: 160)
-      html
-      frontmatter {
-        title
-        date(formatString: "MMMM DD, YYYY")
+      title
+      description {
         description
       }
+      date(formatString: "MMMM DD, YYYY")
+      content {
+        raw
+        references {
+          contentful_id
+          title
+          description
+          gatsbyImageData(
+            layout: CONSTRAINED
+            quality: 80
+            formats: [WEBP, AUTO]
+            placeholder: BLURRED
+          )
+          __typename
+        }
+      }
     }
-    previous: markdownRemark(id: { eq: $previousPostId }) {
-      fields {
-        slug
-      }
-      frontmatter {
-        title
-      }
+    previous: contentfulBlog(id: {eq: $previousPostId}) {
+      slug
+      title
     }
-    next: markdownRemark(id: { eq: $nextPostId }) {
-      fields {
-        slug
-      }
-      frontmatter {
-        title
-      }
+    next: contentfulBlog(id: {eq: $nextPostId}) {
+      slug
+      title
     }
   }
 `
