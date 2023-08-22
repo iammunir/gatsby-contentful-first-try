@@ -65,14 +65,14 @@ const BlogPostTemplate = ({
         >
           <li>
             {previous && (
-              <Link to={previous.slug} rel="prev">
+              <Link to={`/${previous.slug}`} rel="prev">
                 ← {previous.title}
               </Link>
             )}
           </li>
           <li>
             {next && (
-              <Link to={next.slug} rel="next">
+              <Link to={`/${next.slug}`} rel="next">
                 {next.title} →
               </Link>
             )}
